@@ -2,7 +2,9 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/msg.h>
+#include <sys/ipc.h>
 
 using namespace std;
 
@@ -12,11 +14,10 @@ struct msgbuffer
     unsigned char mtext[128];
 };
 
-int emisor(string nombre, long mtype)
+void emisor(string nombre, long mtype, key_t key)
 {
     FILE *imagen;
     int msqid;
-    key_t key = 99;
     struct msgbuffer mensaje;
     unsigned char fin[17];
 
@@ -64,7 +65,7 @@ int main(void)
 {
     int msqid;
     int mtype = 1;
-    key_t key = 99;
+    key_t key = 0x999;
     string nombre;
     struct msgbuffer mensaje;
 
@@ -86,7 +87,7 @@ int main(void)
 
             if (pid == 0)
             {
-                emisor(nombre, mtype);
+                emisor(nombre, mtype, key);
             }
             else
             {

@@ -1,7 +1,9 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <sys/types.h>
 #include <sys/msg.h>
+#include <sys/ipc.h>
 
 using namespace std;
 
@@ -15,7 +17,7 @@ void contratista(string direccion, long mtype)
 {
     FILE *imagen;
     int msqid;
-    key_t key = 99;
+    key_t key = 0x999;
     struct msgbuffer mensaje;
     unsigned char buffer[512];
     unsigned char paquete[128];
@@ -41,7 +43,6 @@ void contratista(string direccion, long mtype)
     mensaje.mtype = mtype;
     msgsnd(msqid, &mensaje, sizeof(mensaje.mtext), 0);
 
-    // Necesita paralelizarlo y restricciones
     while (fread(buffer, 512, 1, imagen) == 1)
     {
         for (int i = 0; i < 512; i += 128)
@@ -65,7 +66,7 @@ void contratista(string direccion, long mtype)
         {
             if (memcmp(fin, mensaje.mtext, 17) == 0)
             {
-                //aqui disminuimos el contador de memoria compartida
+                //Aquí disminuimos el contador de memoria compartida
                 cout << "La copia se guardo correctamente" << endl;
                 break;
             }
@@ -77,6 +78,6 @@ void contratista(string direccion, long mtype)
 
 int main(void)
 {
-    contratista("ECCI-logo.png", 3);
+    contratista("nombre_de_la_imagen.png", 1);
     return 0;
 }
