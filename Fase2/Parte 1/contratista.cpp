@@ -41,6 +41,7 @@ void contratista(string direccion, long mtype)
     mensaje.mtype = mtype;
     msgsnd(msqid, &mensaje, sizeof(mensaje.mtext), 0);
 
+    // Necesita paralelizarlo y restricciones
     while (fread(buffer, 512, 1, imagen) == 1)
     {
         for (int i = 0; i < 512; i += 128)
