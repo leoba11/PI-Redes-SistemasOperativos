@@ -1,9 +1,9 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-#include <sys/types.h>
-#include <sys/msg.h>
 #include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/types.h>
 
 using namespace std;
 
@@ -13,15 +13,22 @@ struct msgbuffer
     unsigned char mtext[128];
 };
 
-void contratista(string direccion, long mtype)
+void contratista(string nombre, string direccion)
 {
     FILE *imagen;
-    int msqid;
-    key_t key = 0x999;
+    long mtype;
     struct msgbuffer mensaje;
     unsigned char buffer[512];
     unsigned char paquete[128];
     unsigned char fin[17];
+    int memoria_compartida;
+    int cola_mtype;
+    int cola_paquetes;
+    key_t llave_cola_mtype = 0x4444;
+    key_t llave_cola_paquetes = 0x9999;
+    key_t llave_memoria_compartida = 0x4949;
+
+    direccion.append(nombre);
 
     imagen = fopen(direccion.c_str(), "rb");
 
@@ -31,17 +38,42 @@ void contratista(string direccion, long mtype)
         exit(1);
     }
 
-    msqid = msgget(key, 0666);
+    cola_mtype = msgget(llave_cola_mtype, 0666);
 
-    if (msqid < 0)
+    if (cola_mtype < 0)
     {
         cout << "Error al conectar con la cola de mensajes" << endl;
         exit(1);
     }
 
-    strcpy((char *)mensaje.mtext, direccion.c_str());
+    while (true)
+    {
+        if (msgrcv(cola_mtype, &mensaje, sizeof(mensaje.mtext), 1, 0) > 0)
+        {
+            mtype = stoi(reinterpret_cast<char *>(mensaje.mtext));
+            break;
+        }
+    }
+
+    cola_paquetes = msgget(llave_cola_paquetes, 0666);
+
+    if (cola_paquetes < 0)
+    {
+        cout << "Error al conectar con la cola de mensajes" << endl;
+        exit(1);
+    }
+
+    memoria_compartida = shmget(llave_memoria_compartida, sizeof(int), 0666);
+
+    if (memoria_compartida < 0)
+    {
+        cout << "Error al conectar con la memoria compartida" << endl;
+        exit(1);
+    }
+
+    strcpy((char *)mensaje.mtext, nombre.c_str());
     mensaje.mtype = mtype;
-    msgsnd(msqid, &mensaje, sizeof(mensaje.mtext), 0);
+    msgsnd(cola_paquetes, &mensaje, sizeof(mensaje.mtext), 0);
 
     while (fread(buffer, 512, 1, imagen) == 1)
     {
@@ -50,34 +82,30 @@ void contratista(string direccion, long mtype)
             memcpy(paquete, buffer + i, 128);
             memcpy(mensaje.mtext, paquete, sizeof(paquete));
             mensaje.mtype = mtype;
-            msgsnd(msqid, &mensaje, sizeof(mensaje.mtext), 0);
+            msgsnd(cola_paquetes, &mensaje, sizeof(mensaje.mtext), 0);
         }
     }
 
     strcpy((char *)mensaje.mtext, "Fin de la imagen");
     mensaje.mtype = mtype;
-    msgsnd(msqid, &mensaje, sizeof(mensaje.mtext), 0);
+    msgsnd(cola_paquetes, &mensaje, sizeof(mensaje.mtext), 0);
 
     strcpy((char *)fin, "Fin de la imagen");
 
     while (true)
     {
-        if (msgrcv(msqid, &mensaje, sizeof(mensaje.mtext), mtype + 1, 0) > 0)
+        if (msgrcv(cola_paquetes, &mensaje, sizeof(mensaje.mtext), mtype + 1, 0) > 0)
         {
             if (memcmp(fin, mensaje.mtext, 17) == 0)
             {
-                //Aquí disminuimos el contador de memoria compartida
-                cout << "La copia se guardo correctamente" << endl;
+                void *contador = shmat(memoria_compartida, NULL, 0);
+                *((int *)contador) -= 1;
+                shmdt(contador);
+
                 break;
             }
         }
     }
 
     fclose(imagen);
-}
-
-int main(void)
-{
-    contratista("nombre_de_la_imagen.png", 1);
-    return 0;
 }
