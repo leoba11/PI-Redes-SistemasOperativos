@@ -1,10 +1,11 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/msg.h>
 #include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <vector>
 
 using namespace std;
 
@@ -14,10 +15,11 @@ struct msgbuffer
     unsigned char mtext[128];
 };
 
-void emisor(string nombre, long mtype, key_t key)
+void emisor(string nombre, long mtype)
 {
     FILE *imagen;
     int msqid;
+    key_t key = 0x9999;
     struct msgbuffer mensaje;
     unsigned char fin[17];
 
@@ -63,15 +65,29 @@ void emisor(string nombre, long mtype, key_t key)
 
 int main(void)
 {
-    int msqid;
-    int mtype = 1;
-    key_t key = 0x999;
+    int mtype = 2;
     string nombre;
     struct msgbuffer mensaje;
+    int cola_mtype;
+    int cola_paquetes;
+    key_t llave_cola_mtype = 0x4444;
+    key_t llave_cola_paquetes = 0x9999;
 
-    msqid = msgget(key, IPC_CREAT | 0666);
+    cola_mtype = msgget(llave_cola_mtype, IPC_CREAT | 0666);
 
-    if (msqid < 0)
+    if (cola_mtype < 0)
+    {
+        cout << "Error al crear la cola de mensajes" << endl;
+        exit(1);
+    }
+
+    strcpy((char *)mensaje.mtext, to_string(mtype).c_str());
+    mensaje.mtype = 1;
+    msgsnd(cola_mtype, &mensaje, sizeof(mensaje.mtext), 0);
+
+    cola_paquetes = msgget(llave_cola_paquetes, IPC_CREAT | 0666);
+
+    if (cola_paquetes < 0)
     {
         cout << "Error al crear la cola de mensajes" << endl;
         exit(1);
@@ -79,7 +95,7 @@ int main(void)
 
     while (true)
     {
-        if (msgrcv(msqid, &mensaje, sizeof(mensaje.mtext), mtype, 0) > 0)
+        if (msgrcv(cola_paquetes, &mensaje, sizeof(mensaje.mtext), mtype, 0) > 0)
         {
             nombre = (char *)mensaje.mtext;
 
@@ -87,11 +103,14 @@ int main(void)
 
             if (pid == 0)
             {
-                emisor(nombre, mtype, key);
+                emisor(nombre, mtype);
             }
             else
             {
                 mtype += 2;
+                strcpy((char *)mensaje.mtext, to_string(mtype).c_str());
+                mensaje.mtype = 1;
+                msgsnd(cola_mtype, &mensaje, sizeof(mensaje.mtext), 0);
             }
         }
     }
