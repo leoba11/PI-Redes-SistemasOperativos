@@ -65,33 +65,33 @@ void emisor(string nombre, long mtype)
 
 int main(void)
 {
-    int mtype = 2;
-    string nombre;
-    struct msgbuffer mensaje;
     int cola_mtype;
     int cola_paquetes;
+    int mtype = 2;
     key_t llave_cola_mtype = 0x4444;
     key_t llave_cola_paquetes = 0x9999;
+    string nombre;
+    struct msgbuffer mensaje;
 
     cola_mtype = msgget(llave_cola_mtype, IPC_CREAT | 0666);
 
     if (cola_mtype < 0)
     {
-        cout << "Error al crear la cola de mensajes" << endl;
+        cout << "Error al crear la cola de mensajes (tipos)" << endl;
+        exit(1);
+    }
+
+    cola_paquetes = msgget(llave_cola_paquetes, IPC_CREAT | 0666);
+
+    if (cola_paquetes < 0)
+    {
+        cout << "Error al crear la cola de mensajes (paquetes)" << endl;
         exit(1);
     }
 
     strcpy((char *)mensaje.mtext, to_string(mtype).c_str());
     mensaje.mtype = 1;
     msgsnd(cola_mtype, &mensaje, sizeof(mensaje.mtext), 0);
-
-    cola_paquetes = msgget(llave_cola_paquetes, IPC_CREAT | 0666);
-
-    if (cola_paquetes < 0)
-    {
-        cout << "Error al crear la cola de mensajes" << endl;
-        exit(1);
-    }
 
     while (true)
     {
@@ -104,6 +104,7 @@ int main(void)
             if (pid == 0)
             {
                 emisor(nombre, mtype);
+                exit(0);
             }
             else
             {
