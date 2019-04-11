@@ -6,11 +6,39 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <string>
+#include<limits>
 
 using namespace std;
 
 int main() 
 {
+    int port;
+    bool correctPort = false;
+    
+    while (!correctPort)
+    {
+        cout << "Introduce the server Port: \n";
+        cin >> port;
+        while(cin.fail())
+        {   
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(),'\n');
+            cout << "------ not an integer------" << endl;
+            cin >> port;
+        } 
+        if(!cin.fail())
+        {
+            if (port < 1024)
+            {
+                cout << "Must be a number greater than 1024 " << endl;
+            }else
+            {
+                correctPort = true;
+            } 
+        }
+         
+    }  
+
     // create a socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock == -1)
@@ -19,7 +47,7 @@ int main()
     }
 
     // create a hint structure for the server we're connecting with
-    int port = 5000;
+    
     string ipAddress = "127.0.0.1"; 
     
     sockaddr_in hint;
