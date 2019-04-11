@@ -35,6 +35,7 @@ int main()
 		cerr << "Can't bind to IP/Port";
 		return -2;
 	}
+	
 
 	// Mark the socket to listening in
 	if(listen(listening, 3) == -1)

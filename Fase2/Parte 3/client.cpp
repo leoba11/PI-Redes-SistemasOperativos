@@ -14,10 +14,15 @@ int main()
 {
     int port;
     bool correctPort = false;
-    
+    string ipAddress;
+      
+    cout << "Introduce the server IP: " << endl;
+    cin >> ipAddress;
+
+
     while (!correctPort)
     {
-        cout << "Introduce the server Port: \n";
+        cout << "Introduce the server Port: " << endl;
         cin >> port;
         while(cin.fail())
         {   
@@ -48,8 +53,6 @@ int main()
 
     // create a hint structure for the server we're connecting with
     
-    string ipAddress = "127.0.0.1"; 
-    
     sockaddr_in hint;
     hint.sin_family = AF_INET;
     hint.sin_port = htons(port);
@@ -71,7 +74,7 @@ int main()
     {
         // enter text
         cout << "> ";
-        getline(cin, userInput);
+        cin >> userInput;
 
         // send to server 
         int sendReslt = send(sock, userInput.c_str(), userInput.size() + 1, 0);
