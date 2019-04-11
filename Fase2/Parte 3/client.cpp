@@ -70,30 +70,32 @@ int main()
     char buf[4096];
     string userInput;
 
-    do
+    while (true)
     {
-        // enter text
-        cout << "> ";
-        cin >> userInput;
-
-        // send to server 
-        int sendReslt = send(sock, userInput.c_str(), userInput.size() + 1, 0);
-        if (sendReslt == -1)
+        while (userInput != "exit")
         {
-            cout << "Couldn't send to server\r\n";
-            continue;  
-        }
-        
+            // enter text
+            cout << "> ";
+            cin >> userInput;
 
-        // wait for response
-        memset(buf, 0, 4096);
-        int bytesRcv = recv(sock, buf, 4096, 0);
+            // send to server 
+            int sendReslt = send(sock, userInput.c_str(), userInput.size() + 1, 0);
+            if (sendReslt == -1)
+            {
+                cout << "Couldn't send to server\r\n";
+                continue;  
+            }
+            
 
-        // Display response
-        
-        cout << "Server> " << string(buf, bytesRcv) << "\r\n"; 
+            // wait for response
+            memset(buf, 0, 4096);
+            int bytesRcv = recv(sock, buf, 4096, 0);
 
-    } while (true);
+            // Display response   
+            cout << "Server> " << string(buf, bytesRcv) << "\r\n";
+        } 
+        break;
+    } ;
     
     // Close Socket
     close(sock);

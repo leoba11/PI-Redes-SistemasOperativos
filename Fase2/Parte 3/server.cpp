@@ -89,7 +89,7 @@ int main()
 			cout << "The client disconnected" << endl;
 			break;
 		}
-
+		
 		// Display message
 		cout << "Recieved: " << string(buf, 0, bytesRcv) << endl;
 
@@ -99,7 +99,6 @@ int main()
 	
 	// close the socket
 	close(clientSocket);
-
 
 	return 0;
 }
